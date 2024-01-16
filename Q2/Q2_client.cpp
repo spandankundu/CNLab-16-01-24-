@@ -3,14 +3,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-void sendCommand(const char* command, int serverSocket) {
-    if (send(serverSocket, command, strlen(command), 0) == -1) {
-        perror("Error sending command to server");
-        close(serverSocket);
-        exit(1);
-    }
-}
-
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         std::cerr << "Usage: " << argv[0] << " <ip> <port>\n";
@@ -32,36 +24,40 @@ int main(int argc, char* argv[]) {
     serverAddr.sin_port = htons(port);
 
     if (connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
-        perror("Error connecting to server");
+        perror("Error connecting to the server");
         close(clientSocket);
         return 1;
     }
 
+    std::cout << "Connected to the server.\n";
+
+    // Accept user commands until the user enters "EXIT"
+    std::string command;
     while (true) {
-        std::cout << "Enter a command ('EXIT' to exit): ";
-        std::string command;
+        std::cout << "Enter command (or type EXIT to exit): ";
         std::getline(std::cin, command);
 
-        if (command == "EXIT" || command == "exit") {
+        if (command == "EXIT") {
             break;
         }
 
-        // Send command to the server
-        sendCommand(command.c_str(), clientSocket);
+        // Send the command to the server
+        send(clientSocket, command.c_str(), command.size(), 0);
 
         // Receive and print the server's response
-        char buffer[1024];
+        char buffer[256];
         ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-        if (bytesRead > 0) {
-            buffer[bytesRead] = '\0';
-            std::cout << "Server response:\n" << buffer << std::endl;
-        } else {
-            std::cerr << "Error receiving response from server.\n";
+        if (bytesRead <= 0) {
+            std::cerr << "Error receiving response from the server.\n";
+            break;
         }
+
+        buffer[bytesRead] = '\0';  // Null-terminate the received data
+        std::cout << "Server Response:\n" << buffer << std::endl;
     }
 
+    // Close the client socket
     close(clientSocket);
 
     return 0;
 }
-
