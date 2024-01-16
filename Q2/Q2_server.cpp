@@ -14,31 +14,14 @@ struct Part {
 std::unordered_map<int, Part> inventory;
 
 void initializeInventory() {
-    Part part1, part2, part3, part4;
-    part1.partName = "IC Motor";
-    part1.partPrice = 40000;
-    part1.partQuantity = 100;
-    part1.partDescription = "400 lb-ft Petrol Engine";
-
-    part2.partName = "Brake Pads";
-    part2.partPrice = 20000;
-    part2.partQuantity = 50;
-    part2.partDescription = "Export Quality Brake Pads";
-
-    part3.partName = "Box Gear";
-    part3.partPrice = 35000.50;
-    part3.partQuantity = 30;
-    part3.partDescription = "Manual 7 Wheel Gear";
-
-    part4.partName = "Recliner Seats";
-    part4.partPrice = 40;
-    part4.partQuantity = 25;
-    part4.partDescription = "Breathable Fibre Recliner Seats";
-
-    inventory.insert({1, part1});
-    inventory.insert({2, part2});
-    inventory.insert({3, part3});
-    inventory.insert({4, part4});
+    // Sample data
+    inventory = {
+        {1, {"IC Motor", 40000, 100, "400 lb-ft Petrol Engine"}},
+        {2, {"Brake Pads", 20000, 50, "Export Quality Brake Pads"}},
+        {3, {"Box Gear", 35000.50, 30, "Manual 7 Wheel Gear"}},
+        {4, {"Recliner Seats", 40, 25, "Breathable Fibre Recliner Seats"}},
+        {5, {"Air Filter", 15, 80, "High Efficiency Air Filter"}}
+    };
 }
 
 void searchPart(int partNumber, int clientSocket) {
@@ -90,7 +73,7 @@ int main(int argc, char* argv[]) {
     int port = std::stoi(argv[2]);
 
     initializeInventory();
-   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == -1) {
         perror("Error creating socket");
         return 1;
@@ -115,39 +98,42 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Server is listening for connections on port " << port << "...\n";
 
-   while (true) {
-    int clientSocket = accept(serverSocket, nullptr, nullptr);
-    std::cout << "Client connected.\n";
+    while (true) {
+        int clientSocket = accept(serverSocket, nullptr, nullptr);
+        std::cout << "Client connected.\n";
 
-    // Receive command from the client
-    char buffer[256];
-    ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-    if (bytesRead <= 0) {
-        std::cerr << "Error receiving command from client.\n";
-        close(clientSocket);
-        continue;
+        // Receive command from the client
+        char buffer[256];
+        ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+        if (bytesRead <= 0) {
+            std::cerr << "Error receiving command from client.\n";
+            close(clientSocket);
+            continue;
+        }
+
+        // Parse the command and execute corresponding server-side procedure
+        std::string command(buffer, bytesRead);
+        int partNumber;
+
+        if (sscanf(buffer, "SEARCH %d", &partNumber) == 1) {
+            searchPart(partNumber, clientSocket);
+        } else if (sscanf(buffer, "RETRIEVE %d", &partNumber) == 1) {
+            std::string partName = retrievePartName(partNumber);
+            send(clientSocket, partName.c_str(), partName.size(), 0);
+        } else if (sscanf(buffer, "AVAILABILITY %d", &partNumber) == 1) {
+            int quantity = getPartQuantity(partNumber);
+            send(clientSocket, &quantity, sizeof(quantity), 0);
+        } else if (sscanf(buffer, "ORDER %d", &partNumber) == 1) {
+            orderPart(partNumber);
+        } else if (command.substr(0, 4) == "EXIT") {
+            close(clientSocket);
+            break;
+        } else {
+            std::cerr << "Invalid command received.\n";
+        }
+
+        close(clientSocket);  // Close the connection with the client
     }
-
-    // Parse the command and execute corresponding server-side procedure
-    std::string command(buffer, bytesRead);
-    int partNumber;
-
-    if (sscanf(buffer, "SEARCH %d", &partNumber) == 1) {
-        searchPart(partNumber, clientSocket);
-    } else if (sscanf(buffer, "RETRIEVE %d", &partNumber) == 1) {
-        std::string partName = retrievePartName(partNumber);
-        send(clientSocket, partName.c_str(), partName.size(), 0);
-    } else if (sscanf(buffer, "AVAILABILITY %d", &partNumber) == 1) {
-        int quantity = getPartQuantity(partNumber);
-        send(clientSocket, &quantity, sizeof(quantity), 0);
-    } else if (sscanf(buffer, "ORDER %d", &partNumber) == 1) {
-        orderPart(partNumber);
-    } else {
-        std::cerr << "Invalid command received.\n";
-    }
-
-    close(clientSocket);  // Close the connection with the client
-}
 
     close(serverSocket);
 
