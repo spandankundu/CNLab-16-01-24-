@@ -43,14 +43,25 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        char buffer[256];
-        ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-        if (bytesRead <= 0) {
-            std::cerr << "Error receiving response from server.\n";
-            break;
-        }
+        else if (strncmp(command, "AVAILABILITY", 12) == 0) {
+    int quantity;
+    ssize_t bytesRead = recv(clientSocket, &quantity, sizeof(quantity), 0);
+    if (bytesRead <= 0) {
+        std::cerr << "Error receiving response from server.\n";
+        break;
+    }
+    std::cout << "Availability: " << quantity << std::endl;
+} 
+        else {
+    char buffer[256];
+    ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+    if (bytesRead <= 0) {
+        std::cerr << "Error receiving response from server.\n";
+        break;
+    }
+    std::cout << "Server Response:\n" << buffer << std::endl;
+}
 
-        std::cout << "Server Response:\n" << buffer << std::endl;
     }
 
     close(clientSocket);
