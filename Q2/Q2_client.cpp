@@ -24,39 +24,35 @@ int main(int argc, char* argv[]) {
     serverAddr.sin_port = htons(port);
 
     if (connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
-        perror("Error connecting to the server");
+        perror("Error connecting to server");
         close(clientSocket);
         return 1;
     }
 
     std::cout << "Connected to the server.\n";
 
-    // Accept user commands until the user enters "EXIT"
-    std::string command;
+    char command[256];
     while (true) {
-        std::cout << "Enter command (or type EXIT to exit): ";
-        std::getline(std::cin, command);
+        std::cout << "Enter command (SEARCH, RETRIEVE, AVAILABILITY, ORDER, EXIT): ";
+        std::cin.getline(command, sizeof(command));
 
-        if (command == "EXIT") {
+        send(clientSocket, command, strlen(command), 0);
+
+        if (strncmp(command, "EXIT", 4) == 0) {
+            std::cout << "Exiting the client.\n";
             break;
         }
 
-        // Send the command to the server
-        send(clientSocket, command.c_str(), command.size(), 0);
-
-        // Receive and print the server's response
         char buffer[256];
         ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
         if (bytesRead <= 0) {
-            std::cerr << "Error receiving response from the server.\n";
+            std::cerr << "Error receiving response from server.\n";
             break;
         }
 
-        buffer[bytesRead] = '\0';  // Null-terminate the received data
         std::cout << "Server Response:\n" << buffer << std::endl;
     }
 
-    // Close the client socket
     close(clientSocket);
 
     return 0;
