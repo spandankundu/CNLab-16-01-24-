@@ -13,9 +13,35 @@ struct Part {
 
 std::unordered_map<int, Part> inventory;
 
+void initializeInventory() {
+    Part part1, part2, part3, part4;
+    part1.partName = "IC Motor";
+    part1.partPrice = 40000;
+    part1.partQuantity = 100;
+    part1.partDescription = "400 lb-ft Petrol Engine";
+
+    part2.partName = "Brake Pads";
+    part2.partPrice = 20000;
+    part2.partQuantity = 50;
+    part2.partDescription = "Export Quality Brake Pads";
+
+    part3.partName = "Box Gear";
+    part3.partPrice = 35000.50;
+    part3.partQuantity = 30;
+    part3.partDescription = "Manual 7 Wheel Gear";
+
+    part4.partName = "Recliner Seats";
+    part4.partPrice = 40;
+    part4.partQuantity = 25;
+    part4.partDescription = "Breathable Fibre Recliner Seats";
+
+    inventory.insert({1, part1});
+    inventory.insert({2, part2});
+    inventory.insert({3, part3});
+    inventory.insert({4, part4});
+}
+
 void searchPart(int partNumber, int clientSocket) {
-    // Implement search logic based on specified criteria
-    // For demonstration, just printing part details
     if (inventory.find(partNumber) != inventory.end()) {
         std::string result = "Part details for part number " + std::to_string(partNumber) + ":\n";
         result += "Name: " + inventory[partNumber].partName + "\n";
@@ -30,20 +56,22 @@ void searchPart(int partNumber, int clientSocket) {
 }
 
 std::string retrievePartName(int partNumber) {
-    // Implement logic to retrieve part name for a given part number
-    // For demonstration, returning a placeholder name
-    return "Sample Part";
+    if (inventory.find(partNumber) != inventory.end()) {
+        return inventory[partNumber].partName;
+    } else {
+        return "Part Not Found";
+    }
 }
 
 int getPartQuantity(int partNumber) {
-    // Implement logic to get the quantity of available parts
-    // For demonstration, returning a placeholder quantity
-    return 10;
+    if (inventory.find(partNumber) != inventory.end()) {
+        return inventory[partNumber].partQuantity;
+    } else {
+        return 0;
+    }
 }
 
 void orderPart(int partNumber) {
-    // Implement logic for ordering a part
-    // For demonstration, just decrementing the quantity
     if (inventory.find(partNumber) != inventory.end() && inventory[partNumber].partQuantity > 0) {
         inventory[partNumber].partQuantity--;
         std::cout << "Ordered part with part number " << partNumber << std::endl;
@@ -61,7 +89,8 @@ int main(int argc, char* argv[]) {
     const char* ip = argv[1];
     int port = std::stoi(argv[2]);
 
-    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    initializeInventory();
+   int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == -1) {
         perror("Error creating socket");
         return 1;
@@ -128,4 +157,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
